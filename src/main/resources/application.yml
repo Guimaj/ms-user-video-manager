@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: ms-user-video-manager
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${COGNITO_JWK_URI}
+  data:
+    mongodb:
+      uri: ${MONGODB_URL}
+
+server:
+  port: 8080
+  servlet:
+    context-path: /user-video-manager/api/v1
+  error:
+    include-message: always
+    include-binding-errors: always
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+aws:
+  cognito:
+    user-pool-id: ${COGNITO_USER_POOL}
+    client-id: ${COGNITO_CLIENT_ID}
+    region: ${COGNITO_REGION}
+    secret: ${COGNITO_SECRET}
+  access-key-id: ${AWS_ACCESS_KEY_ID}
+  secret-access-key: ${AWS_ACCESS_SECRET_KEY}
+  region: ${AWS_REGION}
+  bucket-name: ${S3_BUCKET_NAME}
+
+
+
