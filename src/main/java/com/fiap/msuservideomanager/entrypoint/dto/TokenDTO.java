@@ -8,7 +8,6 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 @NotEmpty
-@Builder
 public class TokenDTO {
     private String jwt;
 }

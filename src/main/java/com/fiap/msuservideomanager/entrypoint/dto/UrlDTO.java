@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-@Builder
 public class UrlDTO {
     private String url;
     @JsonProperty("x-amz-meta-arquivo-id")
