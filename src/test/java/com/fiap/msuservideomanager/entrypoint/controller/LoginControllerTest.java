@@ -1,11 +1,10 @@
-package com.fiap.msuservideomanager.controller;
+package com.fiap.msuservideomanager.entrypoint.controller;
 
 import com.fiap.msuservideomanager.application.usecase.CriaUsuarioUseCase;
 import com.fiap.msuservideomanager.application.usecase.LoginUsuarioUseCase;
 import com.fiap.msuservideomanager.domain.model.Login;
 import com.fiap.msuservideomanager.domain.model.Token;
 import com.fiap.msuservideomanager.domain.model.Usuario;
-import com.fiap.msuservideomanager.entrypoint.controller.LoginController;
 import com.fiap.msuservideomanager.entrypoint.dto.LoginDTO;
 import com.fiap.msuservideomanager.entrypoint.dto.TokenDTO;
 import com.fiap.msuservideomanager.entrypoint.dto.UsuarioDTO;

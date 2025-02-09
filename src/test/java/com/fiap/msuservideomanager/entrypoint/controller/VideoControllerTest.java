@@ -1,10 +1,9 @@
-package com.fiap.msuservideomanager.controller;
+package com.fiap.msuservideomanager.entrypoint.controller;
 
 import com.fiap.msuservideomanager.application.usecase.*;
 import com.fiap.msuservideomanager.domain.model.Arquivo;
 import com.fiap.msuservideomanager.domain.model.Url;
 import com.fiap.msuservideomanager.domain.model.Video;
-import com.fiap.msuservideomanager.entrypoint.controller.VideoController;
 import com.fiap.msuservideomanager.entrypoint.dto.ArquivoDTO;
 import com.fiap.msuservideomanager.entrypoint.dto.UrlDTO;
 import com.fiap.msuservideomanager.entrypoint.dto.VideoDTO;
