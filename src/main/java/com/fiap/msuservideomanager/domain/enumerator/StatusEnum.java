@@ -2,7 +2,7 @@ package com.fiap.msuservideomanager.domain.enumerator;
 
 public enum StatusEnum {
     PENDENTE("Pendente upload do arquivo"),
-    CONCLUIDO("Processamento concluido"),
+    CONCLUIDO("Concluido"),
     PROCESSANDO("Arquivo em processamento");
 
     private final String descricao;
