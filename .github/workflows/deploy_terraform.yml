@@ -1,0 +1,110 @@
+name: Deploy terraform
+
+on:
+  workflow_run:
+    workflows: ["SonarQube Cloud"]
+    types:
+      - completed
+
+jobs:
+  publish:
+    name: Publish image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+  
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Get Ecr host
+        run: |
+          ecrhost=$(aws ecr describe-repositories --repository-names "${{ vars.PROJECT }}"-repository | grep -oP '"repositoryUri": "\K[^"]+(?=")')
+          echo "ECRHOST=$ecrhost" >> $GITHUB_ENV
+
+      - name: Configure Docker
+        run: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECRHOST }}
+
+      - name: Get app version
+        run: |
+          version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "App version: $version"
+          echo "VERSION=$version" >> $GITHUB_ENV
+        
+      - name: Build Docker Image
+        run: docker build -t "${{ vars.PROJECT }}" .
+
+      - name: Create tag repository
+        run:
+          docker tag "${{ vars.PROJECT }}":latest "${{ env.ECRHOST }}:${{ env.VERSION }}"
+
+      - name: Push Docker Image
+        run: docker push ${{ env.ECRHOST }}:${{ env.VERSION }}
+        continue-on-error: true      
+
+  plan:
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main'
+    name: Plan
+    runs-on: ubuntu-20.04
+    needs: publish
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Get app version
+      run: |
+        version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "App version: $version"
+        echo "VERSION=$version" >> $GITHUB_ENV
+        
+    - name: Plan changes
+      run: |
+        cd terraform
+        terraform fmt -recursive
+        terraform init
+        terraform plan -var='aws_region=${{ vars.AWS_REGION }}' -var='app_version=${{ env.VERSION }}' -var="projectname=${{ vars.PROJECT }}" -var="cluster_name=${{ vars.CLUSTER }}" -var="buckets3=${{ vars.BUCKET }}" -var="access_secret_key=${{ secrets.AWS_ACCESS_SECRET_KEY }}" -var="cognito_jwk_uri=${{ secrets.COGNITO_JWK_URI }}" -var="mongodb_url=${{ secrets.MONGODB_URL }}" -var="cognito_user_pool=${{ secrets.COGNITO_USER_POOL }}" -var="cognito_client_id=${{ secrets.COGNITO_CLIENT_ID }}" -var="cognito_secret=${{ secrets.COGNITO_SECRET }}" -var="access_key=${{ secrets.AWS_ACCESS_KEY_ID }}"
+
+  deploy:
+    name: Deploy
+    needs: plan
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-20.04
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ vars.AWS_REGION }}
+
+    - name: Get app version
+      run: |
+        version=$(mvn org.apache.maven.plugins:maven-help-plugin:3.2.0:evaluate -Dexpression=project.version -q -DforceStdout)
+        echo "App version: $version"
+        echo "VERSION=$version" >> $GITHUB_ENV
+        
+    - name: Apply changes
+      run: |
+        cd terraform
+        terraform fmt -recursive
+        terraform init
+        terraform apply -var='aws_region=${{ vars.AWS_REGION }}' -var='app_version=${{ env.VERSION }}' -var="projectname=${{ vars.PROJECT }}" -var="cluster_name=${{ vars.CLUSTER }}" -var="buckets3=${{ vars.BUCKET }}" -var="access_secret_key=${{ secrets.AWS_ACCESS_SECRET_KEY }}" -var="cognito_jwk_uri=${{ secrets.COGNITO_JWK_URI }}" -var="mongodb_url=${{ secrets.MONGODB_URL }}" -var="cognito_user_pool=${{ secrets.COGNITO_USER_POOL }}" -var="cognito_client_id=${{ secrets.COGNITO_CLIENT_ID }}" -var="cognito_secret=${{ secrets.COGNITO_SECRET }}" -var="access_key=${{ secrets.AWS_ACCESS_KEY_ID }}" --auto-approve
